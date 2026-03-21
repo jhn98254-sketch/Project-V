@@ -43,7 +43,7 @@ loadImage('enemy_tank', 'enemy_tank.png');
 loadImage('enemy_speed', 'enemy_speed.png');
 loadImage('enemy_erratic', 'enemy_erratic.png');
 loadImage('culumon', 'culumon.png');
-loadImage('data', 'Title.jpg'); 
+loadImage('data', 'Title.png'); 
 
 const player = {
     x: canvas.width / 2, y: canvas.height / 2, 
