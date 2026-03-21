@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>워매몬 서바이버</title>
+    <style>
+        :root {
+            --color-slime-green: #4f8a10;
+            --color-glow-green: #a2ff00;
+            --color-rust-brown: #4e2e14;
+            --color-bg-dark: #0a0a0a;
+        }
+
+        body {
+            margin: 0; background-color: var(--color-bg-dark); 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; color: white; 
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+        }
+        
+        #game-container { 
+            position: relative; width: 800px; height: 600px; 
+            border: 5px solid #333; 
+            box-shadow: 0 0 20px var(--color-slime-green); 
+        }
+
+        canvas { background-color: #1a2e1a; display: block; }
+        
+        #hud {
+            position: absolute; top: 15px; left: 15px; right: 15px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            pointer-events: none; z-index: 5;
+        }
+        #hp-bar-container { width: 200px; }
+        #hp-bar { height: 20px; background: #333; border: 2px solid #555; position: relative; border-radius: 10px; overflow: hidden; }
+        #hp-fill { width: 100%; height: 100%; background: #ff3333; transition: width 0.3s; }
+        #hp-text { position: absolute; width: 100%; text-align: center; font-size: 12px; line-height: 20px; font-weight: bold; }
+        #score-display { font-size: 22px; font-weight: bold; color: var(--color-glow-green); text-shadow: 2px 2px 4px #000; }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; display: none;
+            z-index: 10;
+        }
+
+        #title-screen {
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;
+            background-image: url('Title.png'); 
+            background-repeat: no-repeat;
+            background-size: 70% auto; 
+            background-position: center top 10px; 
+            padding-top: 220px; 
+            box-sizing: border-box; 
+        }
+        
+        #start-btn { 
+            background: linear-gradient(180deg, #8B4513 0%, #4e2e14 100%);
+            color: #ebd796; padding: 15px 40px; border: 2px solid #ebd796;
+            font-size: 26px; font-weight: bold; cursor: pointer; border-radius: 8px;
+            text-shadow: 2px 2px 2px #000; transition: all 0.2s; margin-bottom: 20px;
+        }
+
+        .instructions {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--color-slime-green);
+            padding: 15px; border-radius: 5px; text-align: center; width: 320px;
+        }
+        .instructions h4 { margin: 0 0 10px 0; color: var(--color-glow-green); letter-spacing: 2px; }
+        .instructions p { margin: 5px 0; font-size: 14px; color: #ccc; }
+
+        .btn-container {
+            display: grid;
+            grid-template-columns: repeat(2, 300px); 
+            gap: 10px; 
+            justify-content: center; 
+            margin-top: 20px;
+        }
+
+        .upgrade-btn {
+            background: #222; color: #eee; border: 1px solid var(--color-slime-green);
+            margin: 0; padding: 12px; width: 300px; cursor: pointer; font-size: 18px;
+            text-align: left; padding-left: 20px;
+        }
+        .upgrade-btn:hover { background: #333; }
+        
+        #game-over-screen h1 { color: #ff3333; font-size: 50px; margin-bottom: 10px; }
+        
+        #leaderboard {
+            width: 300px; background: rgba(0,0,0,0.6); border: 1px solid var(--color-glow-green);
+            border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: left; min-height: 150px;
+        }
+        #leaderboard h3 { margin-top: 0; color: var(--color-glow-green); text-align: center; }
+        #leaderboard ol { padding-left: 20px; margin-bottom: 0; color: #ddd; }
+        #leaderboard li { margin-bottom: 5px; font-size: 16px; font-weight: bold; }
+        
+        #name-input-section { margin-bottom: 20px; display: flex; gap: 10px; }
+        #player-name { padding: 10px; font-size: 16px; width: 150px; text-align: center; border-radius: 5px; border: none; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="hud">
+            <div id="hp-bar-container">
+                <div id="hp-bar"><div id="hp-fill"></div><div id="hp-text">HP: 10 / 10</div></div>
+                <div id="gold-mode-timer" style="color: gold; font-size: 14px; margin-top: 5px; display: none;"></div>
+            </div>
+            <div id="score-display">점수: 0</div>
+        </div>
+
+        <div id="title-screen" class="overlay">
+            <button id="start-btn" onclick="startGame()">모험시작</button>
+            <div class="instructions">
+                <h4>:: 작동 방법 ::</h4>
+                <p>방향키: 워매몬 이동</p>
+                <p>자동 공격: 핑크색 똥 투척</p>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div id="level-up-screen" class="overlay">
+            <h1 style="color: var(--color-glow-green);">EVOLUTION?</h1>
+            <div class="btn-container">
+                <button class="upgrade-btn" onclick="selectUpgrade('damage')">[1] 관통력 데이터 추가</button>
+                <button class="upgrade-btn" onclick="selectUpgrade('speed')">[2] 연사 속도 최적화</button>
+                <button class="upgrade-btn" onclick="selectUpgrade('move')">[3] 기동성 엔진 업그레이드</button>
+                <button class="upgrade-btn" onclick="selectUpgrade('range')">[4] 사거리 데이터 확장</button>
+                <button class="upgrade-btn" onclick="selectUpgrade('count')">[5] 다중 연산 투사체 추가</button>
+            </div>
+        </div>
+
+        <div id="game-over-screen" class="overlay">
+            <h1>GAME OVER</h1>
+            <h2 id="final-score" style="margin-top: 0;"></h2>
+            
+            <div id="leaderboard"></div>
+            <div id="name-input-section">
+                <input type="text" id="player-name" placeholder="닉네임 입력" maxlength="8">
+                <button class="upgrade-btn" style="width: auto; padding: 10px 15px; text-align: center;" onclick="saveScore()">점수 기록</button>
+            </div>
+
+            <button class="upgrade-btn" style="text-align:center; padding-left:0;" onclick="location.reload()">다시 시작</button>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
