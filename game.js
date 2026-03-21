@@ -224,7 +224,7 @@ function spawnEnemy() {
             });
         }
 
-        if (Math.random() < 0.003) { 
+        if (Math.random() < 0.01) { 
             let cx = Math.random() < 0.5 ? -40 : canvas.width + 40;
             let cy = Math.random() * canvas.height;
             let cvx = cx < 0 ? 1 : -1; 
