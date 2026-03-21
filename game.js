@@ -1,4 +1,4 @@
-// ⭐️ Firebase 초기화 설정 (보내주신 코드)
+// Firebase 초기화 설정
 const firebaseConfig = {
     apiKey: "AIzaSyCn2FIG7O8uM-oRB1wWTpSTabMo9oooGFw",
     authDomain: "pokemon-quiz-f061a.firebaseapp.com",
@@ -43,7 +43,7 @@ loadImage('enemy_tank', 'enemy_tank.png');
 loadImage('enemy_speed', 'enemy_speed.png');
 loadImage('enemy_erratic', 'enemy_erratic.png');
 loadImage('culumon', 'culumon.png');
-loadImage('data', 'Title.png'); 
+loadImage('data', 'Title.jpg'); 
 
 const player = {
     x: canvas.width / 2, y: canvas.height / 2, 
@@ -81,19 +81,58 @@ window.onkeydown = e => {
 };
 window.onkeyup = e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; };
 
+// ⭐️ YouTube API 초기화 설정
+let ytPlayer;
+let isYtReady = false;
+
+window.onYouTubeIframeAPIReady = function() {
+    ytPlayer = new YT.Player('youtube-audio', {
+        height: '0',
+        width: '0',
+        videoId: '7AD6tzBvBzU', // 타이틀 화면 단일 영상 ID
+        playerVars: {
+            'autoplay': 0, // 0으로 두고 아래 클릭 이벤트로 재생
+            'controls': 0,
+            'disablekb': 1,
+            'loop': 1,
+            'playlist': '7AD6tzBvBzU' // 단일 영상 루프 필수 설정
+        },
+        events: {
+            'onReady': () => { isYtReady = true; }
+        }
+    });
+};
+
+// ⭐️ 화면 첫 클릭 시 타이틀 음악 재생 시도 (브라우저 정책 우회)
+window.addEventListener('click', () => {
+    if (isYtReady && isPaused && UI_TITLE.style.display !== 'none') {
+        ytPlayer.playVideo();
+    }
+}, { once: true });
+
+
 window.startGame = function() {
     isPaused = false; 
     UI_TITLE.style.display = 'none'; 
+
+    // ⭐️ 게임 시작 시 플레이리스트로 교체 및 셔플 적용
+    if (isYtReady && ytPlayer) {
+        ytPlayer.loadPlaylist({
+            list: 'PLVZr2XYIG0UDTTogrDKlnBsy759kEwpCc', // 요청하신 플레이리스트 ID
+            listType: 'playlist'
+        });
+        ytPlayer.setVolume(40); // 게임 효과음을 위해 볼륨 살짝 낮춤
+        ytPlayer.setShuffle(true); // 랜덤 재생
+    }
+
     gameLoop(); 
 }
 
-// ⭐️ 온라인 랭킹보드 불러오기 (Firebase 연동)
 async function displayLeaderboard() {
     const lbDiv = document.getElementById('leaderboard');
     lbDiv.innerHTML = "<h3 style='color: white; text-align:center;'>데이터 불러오는 중... ⏳</h3>";
     
     try {
-        // Firebase Firestore에서 score 기준 내림차순으로 상위 5개 가져오기
         const snapshot = await db.collection("womaemon_scores").orderBy("score", "desc").limit(5).get();
         
         if (snapshot.empty) {
@@ -115,31 +154,25 @@ async function displayLeaderboard() {
     }
 }
 
-// ⭐️ 점수 저장 시 Firebase에 등록하기
 window.saveScore = async function() {
     const nameInput = document.getElementById('player-name').value.trim();
     if(!nameInput) return alert('이름을 입력해줘!');
     
-    // 버튼 두 번 누르는 것 방지 및 로딩 표시
     document.getElementById('name-input-section').style.display = 'none'; 
     const lbDiv = document.getElementById('leaderboard');
     lbDiv.innerHTML = "<h3 style='color: white; text-align:center;'>기록 전송 중... 🚀</h3>";
     
     try {
-        // Firestore에 데이터 추가
         await db.collection("womaemon_scores").add({
             name: nameInput,
             score: score,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp() // 동점자 처리를 위한 시간 기록
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
-        // 저장 성공 후 랭킹 다시 불러오기
         displayLeaderboard(); 
-        
     } catch (error) {
         console.error("점수 저장 에러:", error);
         alert("점수 저장에 실패했어! 네트워크를 확인해줘.");
-        document.getElementById('name-input-section').style.display = 'flex'; // 에러나면 다시 입력할 수 있게
+        document.getElementById('name-input-section').style.display = 'flex'; 
         displayLeaderboard();
     }
 }
@@ -343,7 +376,8 @@ function update() {
                     UI_GAME_OVER.style.display = 'flex'; 
                     document.getElementById('final-score').innerText = `최종 점수: ${score}점`; 
                     
-                    // ⭐️ 게임 오버 시 온라인 랭킹보드 불러오기 실행
+                    // 게임 오버 시 랭킹보드 불러오고 음악 정지
+                    if(isYtReady && ytPlayer) ytPlayer.pauseVideo();
                     displayLeaderboard(); 
                 }
             }
