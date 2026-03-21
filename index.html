@@ -50,7 +50,7 @@
             flex-direction: column;
             justify-content: center; 
             align-items: center;
-            background-image: url('Title.png'); 
+            background-image: url('Title.jpg'); 
             background-repeat: no-repeat;
             background-size: 70% auto; 
             background-position: center top 10px; 
@@ -101,6 +101,7 @@
         #name-input-section { margin-bottom: 20px; display: flex; gap: 10px; }
         #player-name { padding: 10px; font-size: 16px; width: 150px; text-align: center; border-radius: 5px; border: none; }
     </style>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
     <div id="game-container">
@@ -113,6 +114,7 @@
         </div>
 
         <div id="title-screen" class="overlay">
+            <p style="color: #ebd796; font-size: 14px; margin-bottom: 10px;">(화면을 한 번 클릭하면 타이틀 음악이 재생됩니다)</p>
             <button id="start-btn" onclick="startGame()">모험시작</button>
             <div class="instructions">
                 <h4>:: 작동 방법 ::</h4>
@@ -146,6 +148,8 @@
 
             <button class="upgrade-btn" style="text-align:center; padding-left:0;" onclick="location.reload()">다시 시작</button>
         </div>
+        
+        <div id="youtube-audio" style="display:none;"></div>
     </div>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
