@@ -41,7 +41,7 @@ loadImage('enemy_tank', 'enemy_tank.png');
 loadImage('enemy_speed', 'enemy_speed.png');
 loadImage('enemy_erratic', 'enemy_erratic.png');
 loadImage('culumon', 'culumon.png');
-loadImage('data', 'Title.png'); 
+loadImage('data', 'title.png'); 
 
 const player = {
     x: canvas.width / 2, y: canvas.height / 2, 
@@ -79,6 +79,27 @@ window.onkeydown = e => {
 };
 window.onkeyup = e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; };
 
+// ⭐️ 발사 사운드 이펙트 생성기 (파일 없이 코드로 "뽁!" 소리 만들기)
+let audioCtx;
+function playShootSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sine'; // 둥글고 경쾌한 파형
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime); // 시작음
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); // 끝음 (빠르게 낮아지며 타격감 생성)
+    
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime); // 볼륨 (배경음악 안 가리게 살짝 작게)
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+}
+
 // YouTube API 관련
 let ytPlayer;
 let isYtReady = false;
@@ -94,7 +115,8 @@ window.onYouTubeIframeAPIReady = function() {
 window.initMusic = function() {
     if (isYtReady && ytPlayer) {
         ytPlayer.playVideo();
-        document.getElementById('bgm-init-btn').style.display = 'none'; 
+        const bgmBtn = document.getElementById('bgm-init-btn');
+        if (bgmBtn) bgmBtn.style.display = 'none'; 
     }
 };
 
@@ -104,20 +126,21 @@ window.startGame = function() {
     const bgmBtn = document.getElementById('bgm-init-btn');
     if (bgmBtn) bgmBtn.style.display = 'none';
 
-    // ⭐️ [수정 1] 유튜브 에러가 나든 말든 게임 화면부터 무조건 먼저 돌립니다!
+    // ⭐️ 브라우저 오디오 시스템 시작 (사용자가 클릭했을 때 허용됨)
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
     lastTime = Date.now();
     gameLoop(); 
 
-    // ⭐️ [수정 2] 유튜브 셔플 에러가 게임을 멈추지 않게 안전망(try-catch) 설치
     try {
         if (isYtReady && ytPlayer) {
             ytPlayer.loadPlaylist({
                 list: 'PLVZr2XYIG0UDTTogrDKlnBsy759kEwpCc',
                 listType: 'playlist'
             });
-            ytPlayer.setVolume(40);
+            ytPlayer.setVolume(30); // 효과음이 잘 들리게 브금 볼륨 살짝 더 낮춤
             
-            // ⭐️ [수정 3] 플레이리스트가 로딩될 시간을 1초 준 뒤에 섞기(셔플) 실행
             setTimeout(() => {
                 if (typeof ytPlayer.setShuffle === 'function') {
                     ytPlayer.setShuffle(true);
@@ -205,7 +228,7 @@ function drawSprite(imgKey, x, y, width, height, flipX = false) {
 }
 
 function spawnEnemy() {
-    const difficultyTier = Math.floor(frames / 60); // 초당 60프레임 기준 난이도 증가 속도 체감
+    const difficultyTier = Math.floor(frames / 60); 
     let spawnCount = 1 + Math.floor(difficultyTier / 15); 
     const spawnRate = Math.max(20, 100 - Math.floor(difficultyTier * 2)); 
 
@@ -221,16 +244,17 @@ function spawnEnemy() {
                 x: ex, y: ey, 
                 hp: typeInfo.hp + hpBonus, 
                 moveTimer: Math.floor(Math.random() * 60), 
-                flipX: false 
+                flipX: false,
+                hitTimer: 0 // ⭐️ 피격 리액션용 타이머 추가
             });
         }
 
-        if (Math.random() < 0.01) { // 동글몬 확률 1%
+        if (Math.random() < 0.01) { 
             let cx = Math.random() < 0.5 ? -40 : canvas.width + 40;
             let cy = Math.random() * canvas.height;
             let cvx = cx < 0 ? 1 : -1; 
             let cvy = (Math.random() - 0.5) * 1;
-            enemies.push({ x: cx, y: cy, size: 30, hp: 3, speed: 1.0, type: 'culumon', img: 'culumon', flipX: cvx < 0, vx: cvx, vy: cvy, moveTimer: 0 });
+            enemies.push({ x: cx, y: cy, size: 30, hp: 3, speed: 1.0, type: 'culumon', img: 'culumon', flipX: cvx < 0, vx: cvx, vy: cvy, moveTimer: 0, hitTimer: 0 });
         }
     }
 }
@@ -282,6 +306,7 @@ function update() {
     let currentCooldown = player.isGold ? 100 : weapon.cooldown; 
     if (Date.now() - weapon.lastShot > currentCooldown) {
         if (player.isGold) {
+            playShootSound(); // ⭐️ 황금똥 발사 소리
             for (let i = 0; i < 8; i++) {
                 let angle = (Math.PI / 4) * i;
                 poops.push({
@@ -291,6 +316,7 @@ function update() {
                 });
             }
         } else {
+            playShootSound(); // ⭐️ 일반똥 발사 소리
             throwPoop(); 
         }
         weapon.lastShot = Date.now();
@@ -331,7 +357,6 @@ function update() {
 
             let currentSpeed = e.speed;
 
-            // ⭐️ 수정됨: speed가 아닌 erratic 타입이 멈칫멈칫하게 변경
             if (e.name === 'erratic') {
                 if (e.moveTimer % 60 > 40) {
                     currentSpeed = 0; 
@@ -350,6 +375,12 @@ function update() {
                 
                 e.hp -= dealtDamage; 
                 p.damage -= dealtDamage; 
+
+                // ⭐️ 타격 리액션 1: 맞았을 때 넉백 (투사체가 날아가는 방향으로 몹이 살짝 밀림)
+                e.hitTimer = 5; // 5프레임 동안 리액션 작동
+                const kbAngle = Math.atan2(p.vy, p.vx);
+                e.x += Math.cos(kbAngle) * 8; 
+                e.y += Math.sin(kbAngle) * 8;
 
                 if (p.damage <= 0) {
                     poops.splice(j, 1); 
@@ -410,8 +441,16 @@ function draw() {
     });
 
     enemies.forEach(e => {
+        // ⭐️ 타격 리액션 2: 맞았을 때 순간적으로 깜빡임
+        if (e.hitTimer > 0) {
+            e.hitTimer--;
+            ctx.globalAlpha = 0.4; // 이미지를 반투명하게 만듦
+        }
+
         if (images[e.img]) drawSprite(e.img, e.x, e.y, e.size, e.size, e.flipX);
         else { ctx.fillStyle = e.color; ctx.fillRect(e.x-15, e.y-15, e.size, e.size); }
+        
+        ctx.globalAlpha = 1.0; // 원상복구
     });
 
     if (player.isGold) {
@@ -425,7 +464,6 @@ function draw() {
     }
 }
 
-// 60FPS 강제 고정! 모니터 주사율 달라도 속도 동일
 let lastTime = Date.now();
 const FPS = 60;
 const frameInterval = 1000 / FPS;
