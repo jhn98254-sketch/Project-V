@@ -1,4 +1,4 @@
-// Firebase 초기화 설정
+// Firebase 설정
 const firebaseConfig = {
     apiKey: "AIzaSyCn2FIG7O8uM-oRB1wWTpSTabMo9oooGFw",
     authDomain: "pokemon-quiz-f061a.firebaseapp.com",
@@ -9,8 +9,6 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
-// -----------------------------------------------------
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -81,50 +79,38 @@ window.onkeydown = e => {
 };
 window.onkeyup = e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; };
 
-// ⭐️ YouTube API 초기화 설정
+// YouTube API 관련
 let ytPlayer;
 let isYtReady = false;
 
 window.onYouTubeIframeAPIReady = function() {
     ytPlayer = new YT.Player('youtube-audio', {
-        height: '0',
-        width: '0',
-        videoId: '7AD6tzBvBzU', // 타이틀 화면 단일 영상 ID
-        playerVars: {
-            'autoplay': 0, // 0으로 두고 아래 클릭 이벤트로 재생
-            'controls': 0,
-            'disablekb': 1,
-            'loop': 1,
-            'playlist': '7AD6tzBvBzU' // 단일 영상 루프 필수 설정
-        },
-        events: {
-            'onReady': () => { isYtReady = true; }
-        }
+        height: '0', width: '0', videoId: '7AD6tzBvBzU',
+        playerVars: { 'autoplay': 0, 'controls': 0, 'loop': 1, 'playlist': '7AD6tzBvBzU' },
+        events: { 'onReady': () => { isYtReady = true; } }
     });
 };
 
-// ⭐️ 화면 첫 클릭 시 타이틀 음악 재생 시도 (브라우저 정책 우회)
-window.addEventListener('click', () => {
-    if (isYtReady && isPaused && UI_TITLE.style.display !== 'none') {
+window.initMusic = function() {
+    if (isYtReady && ytPlayer) {
         ytPlayer.playVideo();
+        document.getElementById('bgm-init-btn').style.display = 'none'; 
     }
-}, { once: true });
-
+};
 
 window.startGame = function() {
     isPaused = false; 
     UI_TITLE.style.display = 'none'; 
+    document.getElementById('bgm-init-btn').style.display = 'none';
 
-    // ⭐️ 게임 시작 시 플레이리스트로 교체 및 셔플 적용
     if (isYtReady && ytPlayer) {
         ytPlayer.loadPlaylist({
-            list: 'PLVZr2XYIG0UDTTogrDKlnBsy759kEwpCc', // 요청하신 플레이리스트 ID
+            list: 'PLVZr2XYIG0UDTTogrDKlnBsy759kEwpCc',
             listType: 'playlist'
         });
-        ytPlayer.setVolume(40); // 게임 효과음을 위해 볼륨 살짝 낮춤
-        ytPlayer.setShuffle(true); // 랜덤 재생
+        ytPlayer.setVolume(40);
+        ytPlayer.setShuffle(true);
     }
-
     gameLoop(); 
 }
 
@@ -204,11 +190,11 @@ function drawSprite(imgKey, x, y, width, height, flipX = false) {
 }
 
 function spawnEnemy() {
-    const difficultyTier = Math.floor(frames / DIFFICULTY_FRAME_INTERVAL);
-    let spawnCount = 1 + Math.floor(difficultyTier / 3); 
+    const difficultyTier = Math.floor(frames / 60); // 초당 60프레임 기준 난이도 증가 속도 체감
+    let spawnCount = 1 + Math.floor(difficultyTier / 15); 
     const spawnRate = Math.max(20, 100 - Math.floor(difficultyTier * 2)); 
 
-    let hpBonus = Math.floor(score / 15);
+    let hpBonus = Math.floor(score / 30);
 
     if (frames % spawnRate === 0) {
         for (let i = 0; i < spawnCount; i++) {
@@ -224,7 +210,7 @@ function spawnEnemy() {
             });
         }
 
-        if (Math.random() < 0.01) { 
+        if (Math.random() < 0.01) { // 동글몬 확률 1%
             let cx = Math.random() < 0.5 ? -40 : canvas.width + 40;
             let cy = Math.random() * canvas.height;
             let cvx = cx < 0 ? 1 : -1; 
@@ -330,7 +316,8 @@ function update() {
 
             let currentSpeed = e.speed;
 
-            if (e.name === 'speed') {
+            // ⭐️ 수정됨: speed가 아닌 erratic 타입이 멈칫멈칫하게 변경
+            if (e.name === 'erratic') {
                 if (e.moveTimer % 60 > 40) {
                     currentSpeed = 0; 
                 }
@@ -376,7 +363,6 @@ function update() {
                     UI_GAME_OVER.style.display = 'flex'; 
                     document.getElementById('final-score').innerText = `최종 점수: ${score}점`; 
                     
-                    // 게임 오버 시 랭킹보드 불러오고 음악 정지
                     if(isYtReady && ytPlayer) ytPlayer.pauseVideo();
                     displayLeaderboard(); 
                 }
@@ -424,7 +410,7 @@ function draw() {
     }
 }
 
-// ⭐️ 모니터 주사율 상관없이 60FPS로 속도 고정!
+// 60FPS 강제 고정! 모니터 주사율 달라도 속도 동일
 let lastTime = Date.now();
 const FPS = 60;
 const frameInterval = 1000 / FPS;
@@ -435,9 +421,8 @@ function gameLoop() {
     let currentTime = Date.now();
     let deltaTime = currentTime - lastTime;
 
-    // 1초에 60번(약 16.6ms) 간격이 지났을 때만 화면을 업데이트함
     if (deltaTime >= frameInterval) {
-        lastTime = currentTime - (deltaTime % frameInterval); // 오차 보정
+        lastTime = currentTime - (deltaTime % frameInterval); 
         update(); 
         draw();
     }
