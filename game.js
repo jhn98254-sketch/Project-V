@@ -424,8 +424,22 @@ function draw() {
     }
 }
 
+// ⭐️ 모니터 주사율 상관없이 60FPS로 속도 고정!
+let lastTime = Date.now();
+const FPS = 60;
+const frameInterval = 1000 / FPS;
+
 function gameLoop() {
-    update(); draw();
     if(!isGameOver) requestAnimationFrame(gameLoop);
+
+    let currentTime = Date.now();
+    let deltaTime = currentTime - lastTime;
+
+    // 1초에 60번(약 16.6ms) 간격이 지났을 때만 화면을 업데이트함
+    if (deltaTime >= frameInterval) {
+        lastTime = currentTime - (deltaTime % frameInterval); // 오차 보정
+        update(); 
+        draw();
+    }
 }
 draw();
