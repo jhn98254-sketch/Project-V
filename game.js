@@ -101,17 +101,32 @@ window.initMusic = function() {
 window.startGame = function() {
     isPaused = false; 
     UI_TITLE.style.display = 'none'; 
-    document.getElementById('bgm-init-btn').style.display = 'none';
+    const bgmBtn = document.getElementById('bgm-init-btn');
+    if (bgmBtn) bgmBtn.style.display = 'none';
 
-    if (isYtReady && ytPlayer) {
-        ytPlayer.loadPlaylist({
-            list: 'PLVZr2XYIG0UDTTogrDKlnBsy759kEwpCc',
-            listType: 'playlist'
-        });
-        ytPlayer.setVolume(40);
-        ytPlayer.setShuffle(true);
-    }
+    // ⭐️ [수정 1] 유튜브 에러가 나든 말든 게임 화면부터 무조건 먼저 돌립니다!
+    lastTime = Date.now();
     gameLoop(); 
+
+    // ⭐️ [수정 2] 유튜브 셔플 에러가 게임을 멈추지 않게 안전망(try-catch) 설치
+    try {
+        if (isYtReady && ytPlayer) {
+            ytPlayer.loadPlaylist({
+                list: 'PLVZr2XYIG0UDTTogrDKlnBsy759kEwpCc',
+                listType: 'playlist'
+            });
+            ytPlayer.setVolume(40);
+            
+            // ⭐️ [수정 3] 플레이리스트가 로딩될 시간을 1초 준 뒤에 섞기(셔플) 실행
+            setTimeout(() => {
+                if (typeof ytPlayer.setShuffle === 'function') {
+                    ytPlayer.setShuffle(true);
+                }
+            }, 1000);
+        }
+    } catch (error) {
+        console.error("유튜브 재생 중 에러 발생 (게임은 정상 진행됨):", error);
+    }
 }
 
 async function displayLeaderboard() {
