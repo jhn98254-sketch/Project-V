@@ -37,6 +37,7 @@
             background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
             justify-content: center; align-items: center; display: none;
             z-index: 10;
+            overflow-y: auto;
         }
 
         #title-screen {
@@ -113,7 +114,7 @@
             touch-action: none; /* 추가: 모바일에서 캔버스 터치 시 스크롤 방지 */
         }
         
-        media (max-width: 600px) {
+        @media (max-width: 600px) {
             #game-container {
                 width: 100vw;
                 height: 100vh;
@@ -129,8 +130,9 @@
             }
             #title-screen { padding-top: 150px; background-size: 90% auto; }
             #start-btn { font-size: 20px; padding: 10px 20px; }
+            #level-up-screen h1 { font-size: 28px; margin-top: 20px; }
             .btn-container { grid-template-columns: 1fr; }
-            .upgrade-btn { width: 90%; margin: 0 auto; font-size: 14px; }
+            .upgrade-btn { width: 85vw; margin: 0 auto; font-size: 14px; padding: 12px; }
         }
     </style>
 </head>
@@ -144,7 +146,7 @@
             <div id="score-display">점수: 0</div>
         </div>
 
-        <div id="title-screen" class="overlay">
+        <div id="title-screen" class="">
             <p style="color: #ebd796; font-size: 14px; margin-bottom: 10px;">(화면을 한 번 클릭하면 타이틀 음악이 재생됩니다)</p>
             <button id="start-btn" onclick="startGame()">모험시작</button>
             <div class="instructions">
@@ -156,7 +158,7 @@
 
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         
-        <div id="level-up-screen" class="overlay">
+        <div id="level-up-screen" class="">
             <h1 style="color: var(--color-glow-green);">EVOLUTION?</h1>
             <div class="btn-container">
                 <button class="upgrade-btn" onclick="selectUpgrade('damage')">[1] 관통력 데이터 추가</button>
@@ -167,7 +169,7 @@
             </div>
         </div>
 
-        <div id="game-over-screen" class="overlay">
+        <div id="game-over-screen" class="">
             <h1>GAME OVER</h1>
             <h2 id="final-score" style="margin-top: 0;"></h2>
             
