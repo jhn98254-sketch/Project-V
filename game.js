@@ -68,6 +68,45 @@ const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: f
 
 window.onkeydown = e => { 
     if (keys.hasOwnProperty(e.key)) keys[e.key] = true; 
+   
+    let isTouching = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchCurrentX = 0;
+    let touchCurrentY = 0;
+
+    function getCanvasTouchPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+    return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY
+        };
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const pos = getCanvasTouchPos(e);
+        isTouching = true;
+        touchStartX = pos.x;
+        touchStartY = pos.y;
+        touchCurrentX = pos.x;
+        touchCurrentY = pos.y;
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!isTouching) return;
+        const pos = getCanvasTouchPos(e);
+        touchCurrentX = pos.x;
+        touchCurrentY = pos.y;
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        isTouching = false;
+    });
     
     if (isPaused && UI_LEVEL_UP.style.display === 'flex') {
         if (e.key === '1') selectUpgrade('damage');
@@ -299,7 +338,19 @@ function update() {
     if (keys.ArrowDown) player.y += player.speed;
     if (keys.ArrowLeft) { player.x -= player.speed; player.flipX = true; }
     if (keys.ArrowRight) { player.x += player.speed; player.flipX = false; }
-    
+    if (isTouching) {
+        const dx = touchCurrentX - touchStartX;
+        const dy = touchCurrentY - touchStartY;
+        const dist = Math.hypot(dx, dy);
+        
+        if (dist > 10) {
+            player.x += (dx / dist) * player.speed;
+            player.y += (dy / dist) * player.speed;
+            
+            if (dx < 0) player.flipX = true;
+            if (dx > 0) player.flipX = false;
+        }
+    }
     player.x = Math.max(0, Math.min(canvas.width, player.x));
     player.y = Math.max(0, Math.min(canvas.height, player.y));
 
