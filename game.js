@@ -12,6 +12,15 @@ const db = firebase.firestore();
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+function resizeCanvas() {
+    // 모바일 기기의 실제 화면 픽셀 크기를 캔버스 게임 맵 크기로 일치시킴
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+
+// 게임 로드 시 최초 1회 실행하여 해상도 맞춤
+resizeCanvas();
 const UI_TITLE = document.getElementById('title-screen'); 
 const UI_LEVEL_UP = document.getElementById('level-up-screen');
 const UI_GAME_OVER = document.getElementById('game-over-screen');
