@@ -68,6 +68,17 @@ const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: f
 
 window.onkeydown = e => { 
     if (keys.hasOwnProperty(e.key)) keys[e.key] = true; 
+
+    if (isPaused && UI_LEVEL_UP.style.display === 'flex') {
+        if (e.key === '1') selectUpgrade('damage');
+        if (e.key === '2') selectUpgrade('speed');
+        if (e.key === '3') selectUpgrade('move');
+        if (e.key === '4') selectUpgrade('range');
+        if (e.key === '5') selectUpgrade('count');
+    }
+};
+
+window.onkeyup = e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; };
    
     let isTouching = false;
     let touchStartX = 0;
@@ -107,16 +118,6 @@ window.onkeydown = e => {
         e.preventDefault();
         isTouching = false;
     });
-    
-    if (isPaused && UI_LEVEL_UP.style.display === 'flex') {
-        if (e.key === '1') selectUpgrade('damage');
-        if (e.key === '2') selectUpgrade('speed');
-        if (e.key === '3') selectUpgrade('move');
-        if (e.key === '4') selectUpgrade('range');
-        if (e.key === '5') selectUpgrade('count');
-    }
-};
-window.onkeyup = e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; };
 
 // ⭐️ 발사 사운드 이펙트 생성기 (파일 없이 코드로 "뽁!" 소리 만들기)
 let audioCtx;
