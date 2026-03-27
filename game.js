@@ -148,36 +148,18 @@ function playShootSound() {
     osc.start();
     osc.stop(audioCtx.currentTime + 0.1);
 }
-
-// YouTube API 관련
-let ytPlayer;
-let isYtReady = false;
-
-window.onYouTubeIframeAPIReady = function() {
-    ytPlayer = new YT.Player('youtube-audio', {
-        height: '0', width: '0', videoId: '7AD6tzBvBzU',
-        playerVars: { 'autoplay': 0, 'controls': 0, 'loop': 1, 'playlist': '7AD6tzBvBzU' },
-        events: { 'onReady': () => { isYtReady = true; } }
-    });
-};
-
-window.initMusic = function() {
-    if (isYtReady && ytPlayer) {
-        ytPlayer.playVideo();
+    // ⭐️ 로컬 BGM 오디오 객체 생성
+    const bgm = new Audio('sunset_at_the_gate.mp3');
+    bgm.loop = true; // 무한 반복
+    bgm.volume = 0.3; // 브금 볼륨 (0.0 ~ 1.0 사이, 효과음이 잘 들리게 낮춤)
+    window.startGame = function() {
+        isPaused = false; 
+        UI_TITLE.style.display = 'none'; 
         const bgmBtn = document.getElementById('bgm-init-btn');
-        if (bgmBtn) bgmBtn.style.display = 'none'; 
-    }
-};
+        if (bgmBtn) bgmBtn.style.display = 'none';
 
-window.startGame = function() {
-    isPaused = false; 
-    UI_TITLE.style.display = 'none'; 
-    const bgmBtn = document.getElementById('bgm-init-btn');
-    if (bgmBtn) bgmBtn.style.display = 'none';
-
-    // ⭐️ 브라우저 오디오 시스템 시작 (사용자가 클릭했을 때 허용됨)
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    // ⭐️ BGM 재생 시작
+    bgm.play().catch(error => console.error("BGM 재생 에러 (파일이 없거나 권한 문제):", error));
 
     lastTime = Date.now();
     gameLoop(); 
