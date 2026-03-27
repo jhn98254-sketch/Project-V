@@ -114,6 +114,13 @@
         }
         
         @media (max-width: 600px) {
+          #game-container {
+                max-height: 100vh; /* 600px 높이 제한 풀고 화면 꽉 차게 */
+                border: none; /* 모바일에선 테두리 지우는 게 깔끔함 */
+            }
+            canvas {
+                height: 100%; /* 세로 빈 공간 없이 강제로 꽉 채움 */
+            }
             #title-screen { padding-top: 150px; background-size: 90% auto; }
             #start-btn { font-size: 20px; padding: 10px 20px; }
             .btn-container { grid-template-columns: 1fr; }
