@@ -39,18 +39,19 @@
             z-index: 10;
          }
 
-        #title-screen {
-            display: flex; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center;
-            background-image: url('title.png'); 
-            background-repeat: no-repeat;
-            background-size: clamp(300px, 40%, 600px) auto;
-            background-position: center top 20px; 
-            padding-top: 250px; 
-            box-sizing: border-box; 
-        }
+       #title-screen {
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end; /* 핵심: 내부 UI 요소들을 화면 하단으로 밀어냄 */
+          align-items: center;
+          background-image: url('title.png');
+          background-repeat: no-repeat;
+          background-position: center top 8%; /* 로고를 상단 8% 위치에 고정 */
+          background-size: clamp(250px, 70vw, 550px) auto; /* 로고가 지나치게 커지지 않도록 최대 550px로 제한 */
+          padding-bottom: 8%; /* 하단 UI가 바닥에 완전히 붙지 않도록 여백 확보 */
+          gap: 15px; /* 버튼, 텍스트, 설명창 사이의 간격 추가 */
+          box-sizing: border-box;
+         }
         
         #start-btn { 
             background: linear-gradient(180deg, #8B4513 0%, #4e2e14 100%);
