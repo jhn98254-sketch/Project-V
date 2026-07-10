@@ -145,7 +145,7 @@
             <div id="score-display">점수: 0</div>
         </div>
 
-        <div id="title-screen" class="">
+        <div id="title-screen" class="overlay">
             <p style="color: #ebd796; font-size: 14px; margin-bottom: 10px;">(화면을 한 번 클릭하면 타이틀 음악이 재생됩니다)</p>
             <button id="start-btn" onclick="startGame()">모험시작</button>
             <div class="instructions">
@@ -157,7 +157,7 @@
 
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         
-        <div id="level-up-screen" class="">
+        <div id="level-up-screen" class="overlay">
             <h1 style="color: var(--color-glow-green);">EVOLUTION?</h1>
             <div class="btn-container">
                 <button class="upgrade-btn" onclick="selectUpgrade('damage')">[1] 관통력 데이터 추가</button>
@@ -168,7 +168,7 @@
             </div>
         </div>
 
-        <div id="game-over-screen" class="">
+        <div id="game-over-screen" class="overlay">
             <h1>GAME OVER</h1>
             <h2 id="final-score" style="margin-top: 0;"></h2>
             
