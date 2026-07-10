@@ -315,22 +315,28 @@ function spawnEnemy() {
 
 function throwPoop() {
     if (enemies.length === 0) return;
-    let target = enemies[0];
+    
+    let target = null;
     let minDist = Infinity;
-    enemies.forEach(e => {
-        let d = Math.hypot(e.x - player.x, e.y - player.y);
-        if(d < minDist) { minDist = d; target = e; }
-    });
-
-    const angle = Math.atan2(target.y - player.y, target.x - player.x);
-    for(let i = 0; i < weapon.count; i++) {
-        const spread = (i - (weapon.count - 1) / 2) * 0.3;
-        poops.push({
-            x: player.x, y: player.y, startX: player.x, startY: player.y, maxRange: weapon.range,
-            size: weapon.size, vx: Math.cos(angle + spread) * weapon.speed, vy: Math.sin(angle + spread) * weapon.speed, 
-            damage: weapon.damage, color: '#FF69B4' 
+    
+    // [수정] 1순위 타겟팅: 동글몬 탐색
+    for (let e of enemies) {
+        if (e.type === 'culumon') {
+            target = e;
+            break; // 동글몬을 발견하면 즉시 타겟으로 고정
+        }
+    }
+    
+    // 2순위 타겟팅: 동글몬이 없다면 가장 가까운 적 탐색
+    if (!target) {
+        enemies.forEach(e => {
+            let d = Math.hypot(e.x - player.x, e.y - player.y);
+            if(d < minDist) { minDist = d; target = e; }
         });
     }
+
+    const angle = Math.atan2(target.y - player.y, target.x - player.x);
+    // ... 이하 투사체 생성 로직 동일 ...
 }
 
 window.selectUpgrade = function(type) {
