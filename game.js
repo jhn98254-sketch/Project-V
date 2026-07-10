@@ -64,7 +64,7 @@ let items = [];
 let enemies = [];
 let puddles = []; // ⭐️ 장판 배열 추가
 
-const weapon = { speed: 7, size: 10, cooldown: 1000, lastShot: 0, damage: 1, range: 150, count: 1 };
+const weapon = { speed: 7, size: 10, cooldown: 1000, lastShot: 0, damage: 1, range: 250, count: 1 };
 
 const enemyTypes = [
     { name: "tank", hp: 2, speed: 1.5, color: '#FF8C00', size: 42, img: 'enemy_tank' }, 
