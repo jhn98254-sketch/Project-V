@@ -494,7 +494,32 @@ function draw() {
     } else if (player.invincibilityTimer % 10 < 5) {
         drawSprite('player', player.x, player.y, player.size, player.size, player.flipX);
     }
+     // ⭐️ [신규 추가] 동글몬 위치 추적 화살표 (레이더)
+    let culumon = enemies.find(e => e.type === 'culumon');
+    if (culumon) {
+        // 플레이어와 동글몬 사이의 각도 계산
+        const angle = Math.atan2(culumon.y - player.y, culumon.x - player.x);
+        const radius = 60; // 화살표가 플레이어를 맴도는 궤도 반경
+        const arrowX = player.x + Math.cos(angle) * radius;
+        const arrowY = player.y + Math.sin(angle) * radius;
 
+        ctx.save();
+        ctx.translate(arrowX, arrowY);
+        ctx.rotate(angle);
+        
+        // 반투명한 황금색 화살표 그리기
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.8)'; 
+        ctx.beginPath();
+        ctx.moveTo(12, 0);   // 화살표 뾰족한 끝
+        ctx.lineTo(-8, 8);   // 화살표 윗쪽 꼬리
+        ctx.lineTo(-8, -8);  // 화살표 아랫쪽 꼬리
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    
     // ⭐️ 궁극기 UI 및 연출 렌더링
     ctx.fillStyle = "white";
     ctx.font = "16px Courier New";
@@ -505,6 +530,8 @@ function draw() {
         ctx.globalAlpha = 0.8;
         drawSprite('sukamon', canvas.width / 2, canvas.height / 2, 120, 120, false);
         ctx.restore();
+
+        
     }
 }
 
