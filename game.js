@@ -313,7 +313,7 @@ window.selectUpgrade = function(type) {
     if (type === 'damage') weapon.damage += 1; 
     if (type === 'speed') weapon.cooldown = Math.max(200, weapon.cooldown - 200); 
     if (type === 'move') player.speed += 0.5; 
-    if (type === 'range') weapon.range += 50; 
+    if (type === 'range') weapon.range += 300; 
     if (type === 'count') weapon.count += 1; 
     
     UI_LEVEL_UP.style.display = 'none'; isPaused = false;
