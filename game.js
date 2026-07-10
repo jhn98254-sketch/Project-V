@@ -50,7 +50,7 @@ loadImage('enemy_speed', 'enemy_speed.png');
 loadImage('enemy_erratic', 'enemy_erratic.png');
 loadImage('culumon', 'culumon.png');
 loadImage('data', 'title.png'); 
-loadImage('sukamon', 'sukamon.png'); // ⭐️ 스카몬 이미지 로드
+loadImage('sukamon', 'sukamon.png'); 
 
 const player = {
     x: canvas.width / 2, y: canvas.height / 2, 
@@ -64,12 +64,12 @@ let items = [];
 let enemies = [];
 let puddles = []; 
 
-// ⭐️ 궁극기 관련 전역 변수
 let ultGauge = 0;
 const MAX_ULT = 100; 
 let isUltActive = false;
 
-const weapon = { speed: 7, size: 10, cooldown: 1000, lastShot: 0, damage: 1, range: 150, count: 1 };
+// ⭐️ 사거리 대폭 상향 적용 (1200)
+const weapon = { speed: 7, size: 10, cooldown: 1000, lastShot: 0, damage: 1, range: 1200, count: 1 };
 
 const enemyTypes = [
     { name: "tank", hp: 2, speed: 1.5, color: '#FF8C00', size: 42, img: 'enemy_tank' }, 
@@ -90,7 +90,6 @@ window.onkeydown = e => {
         if (e.key === '5') selectUpgrade('count');
     }
 
-    // ⭐️ 스페이스바로 궁극기 발동
     if (e.code === 'Space' && ultGauge >= MAX_ULT && !isPaused && !isGameOver) {
         activateSukamonUlt();
     }
@@ -163,7 +162,6 @@ window.startGame = function() {
     gameLoop(); 
 }
 
-// 스카몬 궁극기 발동 로직
 function activateSukamonUlt() {
     ultGauge = 0;
     isUltActive = true;
@@ -177,7 +175,7 @@ function activateSukamonUlt() {
         let angle = (Math.PI * 2 / 32) * i;
         poops.push({
             x: sukamonX, y: sukamonY, startX: sukamonX, startY: sukamonY, 
-            maxRange: 1500, size: 35, 
+            maxRange: 2000, size: 35, 
             vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, 
             damage: 100, color: '#8B4513', isUltPoop: true
         });
@@ -266,7 +264,6 @@ function spawnEnemy() {
         }
     }
 
-    // ⭐️ 동글몬 확정 등장 (30초 / 1800프레임 주기)
     if (frames % 1800 === 0 && frames > 0) {
         let cx = Math.random() < 0.5 ? -40 : canvas.width + 40;
         let cy = Math.random() * (canvas.height - 100) + 50; 
@@ -276,26 +273,13 @@ function spawnEnemy() {
     }
 }
 
-// ⭐️ 타겟팅 최적화된 발사 로직
+// ⭐️ 원상 복구된 일반 근접 타겟팅
 function throwPoop() {
-    if (enemies.length === 0) return;
-    
-    let target = null;
-    let minDist = Infinity;
-    
-    for (let e of enemies) {
-        if (e.type === 'culumon') {
-            target = e; break; // 동글몬 최우선 타겟팅
-        }
-    }
-    
-    function throwPoop() {
     if (enemies.length === 0) return;
     
     let target = enemies[0];
     let minDist = Infinity;
     
-    // 무조건 가장 가까운 적을 조준 (동글몬 강제 고정 해제)
     enemies.forEach(e => {
         let d = Math.hypot(e.x - player.x, e.y - player.y);
         if(d < minDist) { minDist = d; target = e; }
@@ -324,7 +308,6 @@ window.selectUpgrade = function(type) {
     UI_LEVEL_UP.style.display = 'none'; isPaused = false;
 }
 
-// ⭐️ 완벽하게 통합 및 수정된 update 함수
 function update() {
     if (isGameOver || isPaused) return; 
     frames++;
@@ -363,7 +346,6 @@ function update() {
         weapon.lastShot = Date.now();
     }
 
-    // 1. 투사체 이동 및 사거리 소멸 루프
     for (let i = poops.length - 1; i >= 0; i--) {
         const p = poops[i]; 
         p.x += p.vx; p.y += p.vy;
@@ -390,7 +372,6 @@ function update() {
 
     spawnEnemy();
     
-    // 2. 적군 이동 및 충돌 루프
     for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
         e.moveTimer++; 
@@ -412,7 +393,6 @@ function update() {
 
         let isDead = false;
         
-        // 투사체 충돌 로직
         for (let j = poops.length - 1; j >= 0; j--) {
             const p = poops[j];
             if (Math.hypot(e.x - p.x, e.y - p.y) < (e.size/2 + p.size/2)) {
@@ -432,7 +412,7 @@ function update() {
                         items.push({ x: e.x, y: e.y, size: 20, timer: 600 });
                     } else {
                         score++; 
-                        ultGauge = Math.min(MAX_ULT, ultGauge + 1); // ⭐️ 게이지 충전
+                        ultGauge = Math.min(MAX_ULT, ultGauge + 1); 
                         if(score % 10 === 0) { isPaused = true; UI_LEVEL_UP.style.display = 'flex'; }
                     }
                     enemies.splice(i, 1); 
@@ -494,12 +474,12 @@ function draw() {
     } else if (player.invincibilityTimer % 10 < 5) {
         drawSprite('player', player.x, player.y, player.size, player.size, player.flipX);
     }
-     // ⭐️ [신규 추가] 동글몬 위치 추적 화살표 (레이더)
+
+    // ⭐️ 동글몬 화살표 레이더
     let culumon = enemies.find(e => e.type === 'culumon');
     if (culumon) {
-        // 플레이어와 동글몬 사이의 각도 계산
         const angle = Math.atan2(culumon.y - player.y, culumon.x - player.x);
-        const radius = 60; // 화살표가 플레이어를 맴도는 궤도 반경
+        const radius = 60; 
         const arrowX = player.x + Math.cos(angle) * radius;
         const arrowY = player.y + Math.sin(angle) * radius;
 
@@ -507,20 +487,17 @@ function draw() {
         ctx.translate(arrowX, arrowY);
         ctx.rotate(angle);
         
-        // 반투명한 황금색 화살표 그리기
         ctx.fillStyle = 'rgba(255, 215, 0, 0.8)'; 
         ctx.beginPath();
-        ctx.moveTo(12, 0);   // 화살표 뾰족한 끝
-        ctx.lineTo(-8, 8);   // 화살표 윗쪽 꼬리
-        ctx.lineTo(-8, -8);  // 화살표 아랫쪽 꼬리
+        ctx.moveTo(12, 0);   
+        ctx.lineTo(-8, 8);   
+        ctx.lineTo(-8, -8);  
         ctx.closePath();
         ctx.fill();
         
         ctx.restore();
     }
 
-    
-    // ⭐️ 궁극기 UI 및 연출 렌더링
     ctx.fillStyle = "white";
     ctx.font = "16px Courier New";
     ctx.fillText(`궁극기(Space): ${Math.floor((ultGauge/MAX_ULT)*100)}%`, 15, 60);
@@ -530,8 +507,6 @@ function draw() {
         ctx.globalAlpha = 0.8;
         drawSprite('sukamon', canvas.width / 2, canvas.height / 2, 120, 120, false);
         ctx.restore();
-
-        
     }
 }
 
