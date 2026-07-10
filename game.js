@@ -33,6 +33,9 @@ let isGameOver = false;
 let isPaused = true; 
 let score = 0;
 let frames = 0;
+let ultGauge = 0;
+const MAX_ULT = 100; // 몹 100마리 처치 시 발동 가능
+let isUltActive = false; // 궁극기 연출 상태
 
 const images = {};
 let imagesLoaded = 0;
@@ -51,6 +54,7 @@ loadImage('enemy_speed', 'enemy_speed.png');
 loadImage('enemy_erratic', 'enemy_erratic.png');
 loadImage('culumon', 'culumon.png');
 loadImage('data', 'title.png'); 
+loadImage('sukamon', 'sukamon.png');
 
 const player = {
     x: canvas.width / 2, y: canvas.height / 2, 
@@ -86,6 +90,10 @@ window.onkeydown = e => {
         if (e.key === '4') selectUpgrade('range');
         if (e.key === '5') selectUpgrade('count');
     }
+
+    if (e.code === 'Space' && ultGauge >= MAX_ULT && !isPaused) {
+        activateSukamonUlt();
+        }
 };
 
 window.onkeyup = e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; };
@@ -580,5 +588,37 @@ function gameLoop() {
         update(); 
         draw();
     }
+    function activateSukamonUlt() {
+    ultGauge = 0;
+    isUltActive = true;
+    
+    // 임시 스카몬 객체 화면 중앙에 소환
+    const sukamonX = canvas.width / 2;
+    const sukamonY = canvas.height / 2;
+    
+    // 사운드가 있다면 재생 (기존 playShootSound 활용)
+    for(let i=0; i<3; i++) setTimeout(playShootSound, i * 100);
+
+    // 360도로 32개의 거대한 관통형 투사체 발사
+    for (let i = 0; i < 32; i++) {
+        let angle = (Math.PI * 2 / 32) * i;
+        poops.push({
+            x: sukamonX, 
+            y: sukamonY, 
+            startX: sukamonX, 
+            startY: sukamonY, 
+            maxRange: 1000, // 맵 끝까지 날아가도록 설정
+            size: 35, // 기존보다 훨씬 큰 사이즈
+            vx: Math.cos(angle) * 12, // 빠른 속도
+            vy: Math.sin(angle) * 12, 
+            damage: 100, // 즉사급 데미지
+            color: '#8B4513', // 스카몬의 갈색
+            isUltPoop: true // 궁극기 투사체 식별자 (장판 생성 방지용)
+        });
+    }
+
+    // 0.5초 후 연출 종료
+    setTimeout(() => { isUltActive = false; }, 500);
+}
 }
 draw();
