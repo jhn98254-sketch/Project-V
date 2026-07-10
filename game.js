@@ -296,6 +296,21 @@ function spawnEnemy() {
             enemies.push({ x: cx, y: cy, size: 30, hp: 3, speed: 1.0, type: 'culumon', img: 'culumon', flipX: cvx < 0, vx: cvx, vy: cvy, moveTimer: 0, hitTimer: 0 });
         }
     }
+    // [수정] 동글몬 스폰 로직을 일반 스폰 if문 밖으로 분리하고 타이머 기반으로 변경
+    if (frames % 1800 === 0 && frames > 0) { // 60FPS 기준 30초마다 1마리 확정 등장
+        let cx = Math.random() < 0.5 ? -40 : canvas.width + 40;
+        let cy = Math.random() * (canvas.height - 100) + 50; // 화면 너무 위/아래에서 나오지 않도록 보정
+        let cvx = cx < 0 ? 1.5 : -1.5; // 속도를 약간 높임 (가시성 확보)
+        let cvy = (Math.random() - 0.5) * 1;
+        
+        enemies.push({ 
+            x: cx, y: cy, size: 30, hp: 3, speed: 1.0, 
+            type: 'culumon', img: 'culumon', flipX: cvx < 0, 
+            vx: cvx, vy: cvy, moveTimer: 0, hitTimer: 0 
+        });
+        
+        console.log("보너스 캐릭터(동글몬) 출현!"); // 테스트용 로그
+    }
 }
 
 function throwPoop() {
