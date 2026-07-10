@@ -406,7 +406,9 @@ function update() {
     for (let i = poops.length - 1; i >= 0; i--) {
         const p = poops[i]; p.x += p.vx; p.y += p.vy;
         if (Math.hypot(p.x - p.startX, p.y - p.startY) > p.maxRange) {
+            if (!p.isUltPoop) {
             createPuddle(p.x, p.y); // ⭐️ 장판 생성
+            }
             poops.splice(i, 1);
         }
     }
@@ -482,7 +484,9 @@ function update() {
                 e.y += Math.sin(kbAngle) * 8;
 
                 if (p.damage <= 0) {
-                    createPuddle(p.x, p.y); // ⭐️ 적과 충돌하여 소멸 시 장판 생성
+                    if (!p.isUltPoop) {
+                    createPuddle(p.x, p.y);
+                }     // ⭐️ 적과 충돌하여 소멸 시 장판 생성
                     poops.splice(j, 1); 
                 }
 
