@@ -7,20 +7,20 @@ const firebaseConfig = {
     messagingSenderId: "281608737778",
     appId: "1:281608737778:web:477a49dea69080c177116b"
 };
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.firestore();
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 function resizeCanvas() {
-    // 모바일 기기의 실제 화면 픽셀 크기를 캔버스 게임 맵 크기로 일치시킴
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 }
 window.addEventListener('resize', resizeCanvas);
-
-// 게임 로드 시 최초 1회 실행하여 해상도 맞춤
 resizeCanvas();
+
 const UI_TITLE = document.getElementById('title-screen'); 
 const UI_LEVEL_UP = document.getElementById('level-up-screen');
 const UI_GAME_OVER = document.getElementById('game-over-screen');
@@ -62,6 +62,7 @@ const player = {
 let poops = [];
 let items = [];
 let enemies = [];
+let puddles = []; // ⭐️ 장판 배열 추가
 
 const weapon = { speed: 7, size: 10, cooldown: 1000, lastShot: 0, damage: 1, range: 150, count: 1 };
 
@@ -89,57 +90,59 @@ window.onkeydown = e => {
 
 window.onkeyup = e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; };
    
-    let isTouching = false;
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchCurrentX = 0;
-    let touchCurrentY = 0;
+let isTouching = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchCurrentX = 0;
+let touchCurrentY = 0;
 
-    function getCanvasTouchPos(e) {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
+function getCanvasTouchPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     return {
         x: (e.touches[0].clientX - rect.left) * scaleX,
         y: (e.touches[0].clientY - rect.top) * scaleY
-        };
-    }
+    };
+}
 
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const pos = getCanvasTouchPos(e);
-        isTouching = true;
-        touchStartX = pos.x;
-        touchStartY = pos.y;
-        touchCurrentX = pos.x;
-        touchCurrentY = pos.y;
-    }, { passive: false });
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const pos = getCanvasTouchPos(e);
+    isTouching = true;
+    touchStartX = pos.x;
+    touchStartY = pos.y;
+    touchCurrentX = pos.x;
+    touchCurrentY = pos.y;
+}, { passive: false });
 
-    canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        if (!isTouching) return;
-        const pos = getCanvasTouchPos(e);
-        touchCurrentX = pos.x;
-        touchCurrentY = pos.y;
-    }, { passive: false });
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!isTouching) return;
+    const pos = getCanvasTouchPos(e);
+    touchCurrentX = pos.x;
+    touchCurrentY = pos.y;
+}, { passive: false });
 
-    canvas.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        isTouching = false;
-    });
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    isTouching = false;
+});
 
-// ⭐️ 발사 사운드 이펙트 생성기 (파일 없이 코드로 "뽁!" 소리 만들기)
 let audioCtx;
 function playShootSound() {
-    if (!audioCtx) return;
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } 
+        catch (e) { return; }
+    }
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     
-    osc.type = 'sine'; // 둥글고 경쾌한 파형
-    osc.frequency.setValueAtTime(400, audioCtx.currentTime); // 시작음
-    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); // 끝음 (빠르게 낮아지며 타격감 생성)
+    osc.type = 'sine'; 
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime); 
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); 
     
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime); // 볼륨 (배경음악 안 가리게 살짝 작게)
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime); 
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
     
     osc.connect(gain);
@@ -148,29 +151,29 @@ function playShootSound() {
     osc.start();
     osc.stop(audioCtx.currentTime + 0.1);
 }
-    // ⭐️ 로컬 BGM 오디오 객체 생성
-    const bgm = new Audio('sunset_at_the_gate.mp3');
-    bgm.loop = true; // 무한 반복
-    bgm.volume = 0.3; // 브금 볼륨 (0.0 ~ 1.0 사이, 효과음이 잘 들리게 낮춤)
-    window.startGame = function() {
-        isPaused = false; 
-        UI_TITLE.style.display = 'none'; 
-        const bgmBtn = document.getElementById('bgm-init-btn');
-        if (bgmBtn) bgmBtn.style.display = 'none';
 
-    // ⭐️ BGM 재생 시작
-    bgm.play().catch(error => console.error("BGM 재생 에러 (파일이 없거나 권한 문제):", error));
+const bgm = new Audio('sunset_at_the_gate.mp3');
+bgm.loop = true; 
+bgm.volume = 0.3; 
+
+window.startGame = function() {
+    isPaused = false; 
+    UI_TITLE.style.display = 'none'; 
+    const bgmBtn = document.getElementById('bgm-init-btn');
+    if (bgmBtn) bgmBtn.style.display = 'none';
+
+    bgm.play().catch(error => console.warn("BGM 재생 불가:", error));
 
     lastTime = Date.now();
     gameLoop(); 
 
     try {
-        if (isYtReady && ytPlayer) {
+        if (typeof isYtReady !== 'undefined' && isYtReady && typeof ytPlayer !== 'undefined' && ytPlayer) {
             ytPlayer.loadPlaylist({
                 list: 'PLVZr2XYIG0UDTTogrDKlnBsy759kEwpCc',
                 listType: 'playlist'
             });
-            ytPlayer.setVolume(30); // 효과음이 잘 들리게 브금 볼륨 살짝 더 낮춤
+            ytPlayer.setVolume(30); 
             
             setTimeout(() => {
                 if (typeof ytPlayer.setShuffle === 'function') {
@@ -179,7 +182,7 @@ function playShootSound() {
             }, 1000);
         }
     } catch (error) {
-        console.error("유튜브 재생 중 에러 발생 (게임은 정상 진행됨):", error);
+        console.warn("유튜브 재생 무시 처리됨:", error);
     }
 }
 
@@ -258,6 +261,11 @@ function drawSprite(imgKey, x, y, width, height, flipX = false) {
     }
 }
 
+// ⭐️ 장판 생성 함수
+function createPuddle(x, y) {
+    puddles.push({ x: x, y: y, radius: 35, timer: 120 });
+}
+
 function spawnEnemy() {
     const difficultyTier = Math.floor(frames / 60); 
     let spawnCount = 1 + Math.floor(difficultyTier / 15); 
@@ -276,7 +284,7 @@ function spawnEnemy() {
                 hp: typeInfo.hp + hpBonus, 
                 moveTimer: Math.floor(Math.random() * 60), 
                 flipX: false,
-                hitTimer: 0 // ⭐️ 피격 리액션용 타이머 추가
+                hitTimer: 0 
             });
         }
 
@@ -349,7 +357,7 @@ function update() {
     let currentCooldown = player.isGold ? 100 : weapon.cooldown; 
     if (Date.now() - weapon.lastShot > currentCooldown) {
         if (player.isGold) {
-            playShootSound(); // ⭐️ 황금똥 발사 소리
+            playShootSound(); 
             for (let i = 0; i < 8; i++) {
                 let angle = (Math.PI / 4) * i;
                 poops.push({
@@ -359,15 +367,25 @@ function update() {
                 });
             }
         } else {
-            playShootSound(); // ⭐️ 일반똥 발사 소리
+            playShootSound(); 
             throwPoop(); 
         }
         weapon.lastShot = Date.now();
     }
 
+    // 투사체 이동 및 소멸 (사거리 오버 시 장판 생성)
     for (let i = poops.length - 1; i >= 0; i--) {
         const p = poops[i]; p.x += p.vx; p.y += p.vy;
-        if (Math.hypot(p.x - p.startX, p.y - p.startY) > p.maxRange) poops.splice(i, 1);
+        if (Math.hypot(p.x - p.startX, p.y - p.startY) > p.maxRange) {
+            createPuddle(p.x, p.y); // ⭐️ 장판 생성
+            poops.splice(i, 1);
+        }
+    }
+
+    // ⭐️ 장판 지속시간 관리
+    for (let i = puddles.length - 1; i >= 0; i--) {
+        puddles[i].timer--;
+        if (puddles[i].timer <= 0) puddles.splice(i, 1);
     }
 
     for (let i = items.length - 1; i >= 0; i--) {
@@ -398,7 +416,17 @@ function update() {
             const angle = Math.atan2(player.y - e.y, player.x - e.x);
             e.flipX = Math.cos(angle) < 0;
 
+            // ⭐️ 장판 디버프 확인
+            let inPuddle = false;
+            for (let p of puddles) {
+                if (Math.hypot(e.x - p.x, e.y - p.y) < p.radius + e.size / 2) {
+                    inPuddle = true;
+                    break;
+                }
+            }
+
             let currentSpeed = e.speed;
+            if (inPuddle) currentSpeed *= 0.4; // 장판 안에서 속도 60% 감소
 
             if (e.name === 'erratic') {
                 if (e.moveTimer % 60 > 40) {
@@ -419,13 +447,13 @@ function update() {
                 e.hp -= dealtDamage; 
                 p.damage -= dealtDamage; 
 
-                // ⭐️ 타격 리액션 1: 맞았을 때 넉백 (투사체가 날아가는 방향으로 몹이 살짝 밀림)
-                e.hitTimer = 5; // 5프레임 동안 리액션 작동
+                e.hitTimer = 5; 
                 const kbAngle = Math.atan2(p.vy, p.vx);
                 e.x += Math.cos(kbAngle) * 8; 
                 e.y += Math.sin(kbAngle) * 8;
 
                 if (p.damage <= 0) {
+                    createPuddle(p.x, p.y); // ⭐️ 적과 충돌하여 소멸 시 장판 생성
                     poops.splice(j, 1); 
                 }
 
@@ -452,7 +480,9 @@ function update() {
                     UI_GAME_OVER.style.display = 'flex'; 
                     document.getElementById('final-score').innerText = `최종 점수: ${score}점`; 
                     
-                    if(isYtReady && ytPlayer) ytPlayer.pauseVideo();
+                    if(typeof isYtReady !== 'undefined' && isYtReady && typeof ytPlayer !== 'undefined' && ytPlayer) {
+                        ytPlayer.pauseVideo();
+                    }
                     displayLeaderboard(); 
                 }
             }
@@ -469,6 +499,14 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // ⭐️ 장판 렌더링 (투사체 아래에 깔리도록 먼저 그림)
+    puddles.forEach(p => {
+        ctx.fillStyle = 'rgba(255, 105, 180, 0.2)'; 
+        ctx.beginPath(); 
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); 
+        ctx.fill();
+    });
+
     poops.forEach(p => {
         ctx.fillStyle = p.color; 
         ctx.beginPath(); ctx.arc(p.x, p.y, p.size/2, 0, Math.PI*2); ctx.fill();
@@ -484,16 +522,15 @@ function draw() {
     });
 
     enemies.forEach(e => {
-        // ⭐️ 타격 리액션 2: 맞았을 때 순간적으로 깜빡임
         if (e.hitTimer > 0) {
             e.hitTimer--;
-            ctx.globalAlpha = 0.4; // 이미지를 반투명하게 만듦
+            ctx.globalAlpha = 0.4; 
         }
 
         if (images[e.img]) drawSprite(e.img, e.x, e.y, e.size, e.size, e.flipX);
         else { ctx.fillStyle = e.color; ctx.fillRect(e.x-15, e.y-15, e.size, e.size); }
         
-        ctx.globalAlpha = 1.0; // 원상복구
+        ctx.globalAlpha = 1.0; 
     });
 
     if (player.isGold) {
