@@ -289,12 +289,17 @@ function throwPoop() {
         }
     }
     
-    if (!target) {
-        enemies.forEach(e => {
-            let d = Math.hypot(e.x - player.x, e.y - player.y);
-            if(d < minDist) { minDist = d; target = e; }
-        });
-    }
+    function throwPoop() {
+    if (enemies.length === 0) return;
+    
+    let target = enemies[0];
+    let minDist = Infinity;
+    
+    // 무조건 가장 가까운 적을 조준 (동글몬 강제 고정 해제)
+    enemies.forEach(e => {
+        let d = Math.hypot(e.x - player.x, e.y - player.y);
+        if(d < minDist) { minDist = d; target = e; }
+    });
 
     if(!target) return;
 
